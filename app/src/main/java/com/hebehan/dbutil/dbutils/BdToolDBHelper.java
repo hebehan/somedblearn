@@ -3,9 +3,7 @@ package com.hebehan.dbutil.dbutils;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-
-import com.imdada.bdtool.constants.BDToolDBConstants;
-import com.tomkey.commons.tools.DevUtil;
+import android.util.Log;
 
 /**
  * bd工具数据库帮助
@@ -18,11 +16,11 @@ public class BdToolDBHelper extends SQLiteOpenHelper {
      * 目前bd工具先支持一个库，多库的可以做instance LIST
      */
     private static BdToolDBHelper instance;
-    public static void init(Context context){
+    public static void init(Context context,String datebaseName){
         if(instance == null){
             synchronized (BdToolDBHelper.class){
                 if(instance == null){
-                    instance = new BdToolDBHelper(context, BDToolDBConstants.DBName.BDTOOL_DB, 100);
+                    instance = new BdToolDBHelper(context, datebaseName, 1);
                 }
             }
         }
@@ -37,16 +35,16 @@ public class BdToolDBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        /**
-         * 创建track表
-         */
-        db.execSQL("create table if not exists "+BDToolDBConstants.TableName.TABLE_TRACK+" (id integer primary key autoincrement, " +
-                "trackId integer, " +
-                "trackStatus integer," +
-                "trackDes text," +
-                "trackLat double, " +
-                "trackLng double ," +
-                "createTime long)");
+//        /**
+//         * 创建track表
+//         */
+//        db.execSQL("create table if not exists "+"person"+" (id integer primary key autoincrement, " +
+//                "trackId integer, " +
+//                "trackStatus integer," +
+//                "trackDes text," +
+//                "trackLat double, " +
+//                "trackLng double ," +
+//                "createTime long)");
 
 
 //        /**
@@ -65,13 +63,13 @@ public class BdToolDBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        DevUtil.e("onUpgrade","oldVersion = "+oldVersion+" newVersion = "+newVersion);
+        Log.e("onUpgrade","oldVersion = "+oldVersion+" newVersion = "+newVersion);
     }
 
     @Override
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 //        super.onDowngrade(db, oldVersion, newVersion);
-        DevUtil.e("onDowngrade","oldVersion = "+oldVersion+" newVersion = "+newVersion);
+        Log.e("onDowngrade","oldVersion = "+oldVersion+" newVersion = "+newVersion);
         db.setVersion(newVersion);
     }
 }

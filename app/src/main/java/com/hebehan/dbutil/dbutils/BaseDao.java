@@ -2,118 +2,141 @@ package com.hebehan.dbutil.dbutils;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.text.TextUtils;
 
-import com.tomkey.commons.tools.DevUtil;
-
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-public abstract class BaseDao<T>{
-    public static SQLiteDatabase read;
-    public static SQLiteDatabase write;
-    public String tableName;
+public class BaseDao{
+    private static SQLiteDatabase read;
+    private static SQLiteDatabase write;
 
-    protected void init(String tableName){
+
+    Map<String,Boolean> isTable = new HashMap<>();
+
+    static BaseDao instace;
+    public static BaseDao getInstance(){
+        if (instace == null){
+            instace = new BaseDao();
+        }
+        return instace;
+    }
+    static {
         if (read == null)
             read = BdToolDBHelper.getInstance().getReadableDatabase();
 
         if (write == null)
             write = BdToolDBHelper.getInstance().getWritableDatabase();
-
-        this.tableName = tableName;
     }
 
+    //===========================↓===↓===↓====↓=↓=============数据库方法==========↓======↓=====↓=========↓====================//
 
-    public void insert(T t){
-        write.insert(tableName,null, Utils.getTValues(t));
-    }
-
-    /**
-     * 插入列表数据
-     * @param lists
-     */
-    public void insert(List<T> lists){
-        if (lists != null && lists.size() > 0){
-            for (int i = 0; i < lists.size(); i++) {
-                insert(lists.get(i));
-            }
-        }
+    public long save(Object entity) {
+        checkTalbleExist(entity.getClass());
+        return write.insert(Utils.getTableName(entity.getClass()),null,Utils.getTValues(entity));
     }
 
     /**
-     * 清空表
-     */
-    public void cleanall(){
-        write.delete(tableName,null,null);
-    }
-
-    /**
-     * 删除多少条数据
-     */
-    public void clean(int count, String orderCol, String ASCORDESC){
-        //默认用主键排序
-        if (TextUtils.isEmpty(ASCORDESC) || !"ascdesc".contains(ASCORDESC.toLowerCase()))
-            ASCORDESC = "ASC";
-        if (TextUtils.isEmpty(orderCol))
-            orderCol = "id";
-
-        DevUtil.d("trackdb","DELETE FROM "+tableName+" WHERE id IN (SELECT id FROM "+tableName+" ORDER BY "+orderCol+" "+ASCORDESC+" LIMIT "+count+");");
-        write.execSQL("DELETE FROM "+tableName+" WHERE id IN (SELECT id FROM "+tableName+" ORDER BY "+orderCol+" "+ASCORDESC+" LIMIT "+count+");");
-    }
-
-    /**
-     * 属性名必须跟数据字段名一致
-     * @param clasz
+     * 根据id删除一条数据 实体主键不能为空
+     * @param entity
      * @return
      */
-    public List<T> getList(Class<T> clasz){
-        List<T> lists = new LinkedList<>();
-        Cursor cursor = null;
-        try {
-            cursor = read.rawQuery("select * from "+tableName,null);
-            List<Map<String,String>> nts = Utils.getTListAttrNameAndType(clasz);
-            if (cursor.moveToFirst()){
-                while (cursor.moveToNext()){
-                    T bean = clasz.newInstance();
-                    for (Map<String,String> map:nts){
-                        for(String name:map.keySet()){
-                            switch (map.get(name)){
-                                case ("class java.lang.String"):
-                                    Utils.setInvokeValue(bean,name,cursor.getString(cursor.getColumnIndex(name)));
-                                    break;
-                                case("int"):
-                                case ("class java.lang.Integer"):
-                                    Utils.setInvokeValue(bean,name,cursor.getInt(cursor.getColumnIndex(name)));
-                                    break;
-                                case("long"):
-                                case ("class java.lang.Long"):
-                                    Utils.setInvokeValue(bean,name,cursor.getLong(cursor.getColumnIndex(name)));
-                                    break;
-                                case("double"):
-                                case ("class java.lang.Double"):
-                                    Utils.setInvokeValue(bean,name,cursor.getDouble(cursor.getColumnIndex(name)));
-                                    break;
-                                case("float"):
-                                case ("class java.lang.Float"):
-                                    Utils.setInvokeValue(bean,name,cursor.getFloat(cursor.getColumnIndex(name)));
-                                    break;
-                            }
-                        }
-                    }
-                    lists.add(bean);
-                }
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }finally {
-            if (cursor != null)
-                cursor.close();
-        }
+    public int delete(Object entity) {
+        checkTalbleExist(entity.getClass());
+        return write.delete(Utils.getTableName(entity.getClass()),SqlMaker.getWhereClause(Utils.getPrimaryKey(entity.getClass())),SqlMaker.getWhereArgs(Utils.getInvokeValue(entity,Utils.getPrimaryKey(entity.getClass()))));
+    }
 
-        return lists;
+    /**
+     * 根据id更新一条数据 实体主键不能为空
+     * @param entity
+     * @return
+     */
+    public int update(Object entity){
+        checkTalbleExist(entity.getClass());
+        return write.update(Utils.getTableName(entity.getClass()),Utils.getTValues(entity),SqlMaker.getWhereClause(Utils.getPrimaryKey(entity.getClass())),SqlMaker.getWhereArgs(Utils.getInvokeValue(entity,Utils.getPrimaryKey(entity.getClass()))));
+    }
+
+    public <T> T findById(Object entity,Class<T> clazz){
+        checkTalbleExist(clazz);
+        Cursor cursor = write.query(Utils.getTableName(clazz),new String[]{Utils.getPrimaryKey(clazz)},SqlMaker.getWhereClause(Utils.getPrimaryKey(clazz)),SqlMaker.getWhereArgs(Utils.getInvokeValue(entity,Utils.getPrimaryKey(clazz))),null,null,null);
+        try {
+            if (cursor.moveToNext()) {
+                return Utils.getList(cursor,clazz).get(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            cursor.close();
+        }
+        return null;
+    }
+
+    public <T> List<T> findAll(Class<T> clazz){
+        checkTalbleExist(clazz);
+        Cursor cursor = write.query(Utils.getTableName(clazz),null,null,null,null,null,null);
+        try {
+            if (cursor.moveToNext()) {
+                return Utils.getList(cursor,clazz);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            cursor.close();
+        }
+        return null;
     }
 
 
+
+
+
+
+
+
+
+    //========================↑==↑=====↑===↑===↑======↑====↑====数据库方法=========↑=======↑==========↑======↑=======↑===========//
+
+
+
+
+
+
+
+
+
+
+    //===================================================其他方法==============================================================//
+    public boolean checkTalbleExist(Class<?> clazz){
+        String tableName = Utils.getTableName(clazz);
+        if (isTable.get(tableName) == null){
+            Cursor cursor = null;
+            try {
+                String sql = "SELECT COUNT(*) AS c FROM sqlite_master WHERE type ='table' AND name ='"
+                        + tableName + "' ";
+                LogUtil.sql(sql);
+                cursor = read.rawQuery(sql, null);
+                if (cursor != null && cursor.moveToNext()) {
+                    int count = cursor.getInt(0);
+                    if (count > 0) {
+                        isTable.put(tableName,true);
+                        return true;
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (cursor != null)
+                    cursor.close();
+                cursor = null;
+            }
+            //表不存在 创建表
+            write.execSQL(SqlMaker.getCreatTableSql(clazz));
+
+            return false;
+        }else {
+            return true;
+        }
+    }
 }

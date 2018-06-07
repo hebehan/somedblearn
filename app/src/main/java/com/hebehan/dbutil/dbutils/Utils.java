@@ -1,9 +1,14 @@
 package com.hebehan.dbutil.dbutils;
 
 import android.content.ContentValues;
+import android.database.Cursor;
+
+import com.hebehan.dbutil.annotation.Table;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +20,7 @@ import java.util.Map;
  */
 public class Utils {
 
+    public static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     /**
      * 获取属性名+属性值
      * @param bean
@@ -27,8 +33,8 @@ public class Utils {
         for(int j=0 ; j<fields.length ; j++){//遍历所有属性
             fields[j].setAccessible(true);
             String name = fields[j].getName();    //获取属性的名字
-            if (("serialversionuid creator $change").contains(name.toLowerCase()))
-                continue;
+//            if (("serialversionuid creator $change").contains(name.toLowerCase()))
+//                continue;
             String type = fields[j].getGenericType().toString();    //获取属性的类型
 
             switch (type){
@@ -42,6 +48,10 @@ public class Utils {
                 case("long"):
                 case ("class java.lang.Long"):
                     values.put(name, getInvokeValue(bean,name) == null?0:(Long) getInvokeValue(bean,name));
+                    break;
+                case("float"):
+                case ("class java.lang.Float"):
+                    values.put(name, getInvokeValue(bean,name) == null?0:(Float) getInvokeValue(bean,name));
                     break;
                 case("double"):
                 case ("class java.lang.Double"):
@@ -57,20 +67,18 @@ public class Utils {
      * @param clasz
      * @return
      */
-    public static <T> List<Map<String,String>> getTListAttrNameAndType(Class<T> clasz){
+    public static Map<String,String> getTMapAttrNameAndType(Class<?> clasz){
         Field[] fields = clasz.getDeclaredFields();
-        List<Map<String,String>> attrNameList = new LinkedList<>();
+        Map<String,String> attrNameMap = new HashMap<>();
         for(int i=0 ; i<fields.length ; i++) {//遍历所有属性
             fields[i].setAccessible(true);
             String name = fields[i].getName();    //获取属性的名字
-            if (("serialversionuid creator $change").contains(name.toLowerCase()))
-                continue;
-            Map<String,String> attrNames = new HashMap<>();
+//            if (("serialversionuid creator $change").contains(name.toLowerCase()))
+//                continue;
             String type = fields[i].getGenericType().toString();    //获取属性的类型
-            attrNames.put(name,type);
-            attrNameList.add(attrNames);
+            attrNameMap.put(name,type);
         }
-        return attrNameList;
+        return attrNameMap;
     }
 
     /**
@@ -80,7 +88,7 @@ public class Utils {
      * @param <T>
      * @return
      */
-    private static <T> Object getInvokeValue(T bean,String name){
+    public static <T> Object getInvokeValue(T bean,String name){
         Method m = null;
         try {
             name = name.substring(0,1).toUpperCase()+name.substring(1); //将属性的首字符大写，方便构造get，set方法
@@ -103,11 +111,85 @@ public class Utils {
         try {
             Field f = bean.getClass().getDeclaredField(name);
             f.setAccessible(true);
+//            if (value instanceof Boolean){
+//                f.set(bean,value);
+//            }
+//            else if (value instanceof java.util.Date || value instanceof java.sql.Date){
+//                f.set(bean,((Date)value).getTime());
+//            }
+//            else {
+//                f.set(bean,value);
+//            }
+
             f.set(bean,value);
+
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 获取表明(实体类的名字)
+     * @param clazz
+     * @return
+     */
+    public static String getTableName(Class<?> clazz){
+        Table table = clazz.getAnnotation(Table.class);
+        if(table == null || table.value().trim().length() == 0 ){
+            //当没有注解的时候默认用类的名称作为表名,并把点（.）替换为下划线(_)
+            return clazz.getName().replace('.', '_');
+        }
+        return table.value();
+    }
+
+    public static String getPrimaryKey(Class<?> clazz){
+        return "id";
+    }
+
+    public static <T> List<T> getList(Cursor cursor,Class<T> clasz){
+        List<T> lists = new LinkedList<>();
+        if (cursor == null)
+            return lists;
+        try {
+            Map<String,String> attrNameMap = getTMapAttrNameAndType(clasz);
+            if (cursor.moveToFirst()){
+                while (cursor.moveToNext()){
+                    T bean = clasz.newInstance();
+                    for (String name :attrNameMap.keySet()){
+                        switch (attrNameMap.get(name)){
+                            case ("class java.lang.String"):
+                                Utils.setInvokeValue(bean,name,cursor.getString(cursor.getColumnIndex(name)));
+                                break;
+                            case("int"):
+                            case ("class java.lang.Integer"):
+                                Utils.setInvokeValue(bean,name,cursor.getInt(cursor.getColumnIndex(name)));
+                                break;
+                            case("long"):
+                            case ("class java.lang.Long"):
+                                Utils.setInvokeValue(bean,name,cursor.getLong(cursor.getColumnIndex(name)));
+                                break;
+                            case("double"):
+                            case ("class java.lang.Double"):
+                                Utils.setInvokeValue(bean,name,cursor.getDouble(cursor.getColumnIndex(name)));
+                                break;
+                            case("float"):
+                            case ("class java.lang.Float"):
+                                Utils.setInvokeValue(bean,name,cursor.getFloat(cursor.getColumnIndex(name)));
+                                break;
+                        }
+                    }
+                    lists.add(bean);
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            if (cursor != null)
+                cursor.close();
+        }
+
+        return lists;
     }
 }
