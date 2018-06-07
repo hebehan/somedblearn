@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class Utils {
 
-    public static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
     /**
      * 获取属性名+属性值
      * @param bean
@@ -33,6 +33,8 @@ public class Utils {
         for(int j=0 ; j<fields.length ; j++){//遍历所有属性
             fields[j].setAccessible(true);
             String name = fields[j].getName();    //获取属性的名字
+            if (name.equals(getPrimaryKey(bean.getClass())))
+                continue;
 //            if (("serialversionuid creator $change").contains(name.toLowerCase()))
 //                continue;
             String type = fields[j].getGenericType().toString();    //获取属性的类型
@@ -56,6 +58,16 @@ public class Utils {
                 case("double"):
                 case ("class java.lang.Double"):
                     values.put(name, getInvokeValue(bean,name) == null?0:(Double) getInvokeValue(bean,name));
+                    break;
+                case ("boolean"):
+                case ("class java.lang.Boolean"):
+                    Object bool = getInvokeValue(bean,getBooleanFieldGetMethod(bean.getClass(),name));
+                    values.put(name, bool == null?false:(Boolean) bool);
+                    break;
+                case ("class java.util.Date"):
+                case ("class java.sql.Date"):
+//                    values.put(name, getInvokeValue(bean,name) == null?SDF.format(new Date()):SDF.format(getInvokeValue(bean,name)));
+                    values.put(name, getInvokeValue(bean,name) == null?new Date().getTime():((Date)getInvokeValue(bean,name)).getTime());
                     break;
             }
         }
@@ -100,6 +112,50 @@ public class Utils {
         return null;
     }
 
+    public static <T> Object getInvokeValue(T bean,Method m){
+        try {
+            return m.invoke(bean);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public static Method getBooleanFieldGetMethod(Class<?> clazz, String fieldName) {
+        String mn = "is" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+        if(isISStart(fieldName)){
+            mn = fieldName;
+        }
+        try {
+            return clazz.getDeclaredMethod(mn);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    public static Method getBooleanFieldSetMethod(Class<?> clazz, Field f) {
+        String fn = f.getName();
+        String mn = "set" + fn.substring(0, 1).toUpperCase() + fn.substring(1);
+        if(isISStart(f.getName())){
+            mn = "set" + fn.substring(2, 3).toUpperCase() + fn.substring(3);
+        }
+        try {
+            return clazz.getDeclaredMethod(mn, f.getType());
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    private static boolean isISStart(String fieldName){
+        if(fieldName==null || fieldName.trim().length()==0)
+            return false;
+        //is开头，并且is之后第一个字母是大写 比如 isAdmin
+        return fieldName.startsWith("is") && !Character.isLowerCase(fieldName.charAt(2));
+    }
+
     /**
      * 设置字段值
      * @param bean
@@ -111,16 +167,6 @@ public class Utils {
         try {
             Field f = bean.getClass().getDeclaredField(name);
             f.setAccessible(true);
-//            if (value instanceof Boolean){
-//                f.set(bean,value);
-//            }
-//            else if (value instanceof java.util.Date || value instanceof java.sql.Date){
-//                f.set(bean,((Date)value).getTime());
-//            }
-//            else {
-//                f.set(bean,value);
-//            }
-
             f.set(bean,value);
 
         } catch (NoSuchFieldException e) {
@@ -154,7 +200,7 @@ public class Utils {
             return lists;
         try {
             Map<String,String> attrNameMap = getTMapAttrNameAndType(clasz);
-            if (cursor.moveToFirst()){
+//            if (cursor.moveToFirst()){
                 while (cursor.moveToNext()){
                     T bean = clasz.newInstance();
                     for (String name :attrNameMap.keySet()){
@@ -178,11 +224,20 @@ public class Utils {
                             case ("class java.lang.Float"):
                                 Utils.setInvokeValue(bean,name,cursor.getFloat(cursor.getColumnIndex(name)));
                                 break;
+                            case ("boolean"):
+                            case ("class java.lang.Boolean"):
+                                int bool = cursor.getInt(cursor.getColumnIndex(name));
+                                Utils.setInvokeValue(bean,name,bool==0?false:true);
+                                break;
+                            case ("class java.util.Date"):
+                            case ("class java.sql.Date"):
+                                Utils.setInvokeValue(bean,name,new Date(cursor.getLong(cursor.getColumnIndex(name))));
+                                break;
                         }
                     }
                     lists.add(bean);
                 }
-            }
+//            }
         }catch (Exception e){
             e.printStackTrace();
         }finally {

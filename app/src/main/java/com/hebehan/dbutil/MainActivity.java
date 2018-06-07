@@ -20,6 +20,7 @@ import com.hebehan.dbutil.dbutils.LogUtil;
 import org.w3c.dom.ls.LSInput;
 
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import java.util.Random;
 import java.util.logging.Level;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static final SimpleDateFormat SDF = new SimpleDateFormat("MM-dd HH:mm:ss");
     Button add;
     Button delete;
     Button update;
@@ -37,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
     Button all;
     RecyclerView recyclerView;
     DecimalFormat df = new DecimalFormat(".00");
-    Map<Long,Long> idmap = new HashMap<>();
     List<Person> list = new ArrayList<>();
     DbAdapter adapter;
     @Override
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                delete();
+                delete(list.size() == 0?0:list.get(0).getId());
                 findAll();
             }
         });
@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
         update.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                update();
+                update(list.size() == 0?0:list.get(0).getId());
                 findAll();
             }
         });
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         query.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                findOne();
+                findOne(list.size() == 0?0:list.get(0).getId());
             }
         });
         all.setOnClickListener(new View.OnClickListener() {
@@ -93,41 +93,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        findAll();
+
     }
 
     public void add(){
-        long result = BaseDao.getInstance().save(getRandomPerson(1));
-        idmap.put(result,result);
+        long result = BaseDao.getInstance().save(getRandomPerson(0));
         LogUtil.d("test add",result>0?"add success id = "+result:"add fail");
     }
 
-    public void delete(){
-        Long key=0l;
-        for (Long tmp:idmap.keySet()){
-            key = tmp;
-            break;
-        }
-        idmap.remove(key);
-        LogUtil.d("test delete",BaseDao.getInstance().delete(new Person(key.intValue()))>0?"delete id = "+key+" success":"delete fail");
+    public void delete(Integer id){
+        LogUtil.d("test delete",BaseDao.getInstance().delete(new Person(id))>0?"delete id = "+id+" success":"delete fail");
     }
 
-    public void update(){
-        Long key=0l;
-        for (Long tmp:idmap.keySet()){
-            key = tmp;
-            break;
-        }
-        LogUtil.d("test delete",BaseDao.getInstance().update(getRandomPerson(key.intValue()))>0?"update id = "+key+"success":"add fail");
+    public void update(Integer id){
+
+        LogUtil.d("test delete",BaseDao.getInstance().update(getRandomPerson(id))>0?"update id = "+id+"success":"add fail");
     }
 
-    public void findOne(){
-        Long key=0l;
-        for (Long tmp:idmap.keySet()){
-            key = tmp;
-            break;
-        }
+    public void findOne(Integer id){
         list.clear();
-        list.add(BaseDao.getInstance().findById(new Person(key.intValue()),Person.class));
+        Person person = BaseDao.getInstance().findById(new Person(id),Person.class);
+        if (person != null)
+            list.add(person);
         adapter.notifyDataSetChanged();
     }
 
@@ -164,8 +152,7 @@ public class MainActivity extends AppCompatActivity {
             holder.height.setText(person.getHeight()+"");
             holder.age.setText(person.getAge()+"");
             holder.isAudlt.setText(person.isAdult()+"");
-            holder.date.setText(person.getDate()+"");
-
+            holder.date.setText(SDF.format(person.getDate()));
         }
 
         @Override

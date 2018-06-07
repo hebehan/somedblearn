@@ -17,6 +17,13 @@ public class Person {
     private Date date;
     private boolean isAdult;
 
+    public boolean isAdult() {
+        return isAdult;
+    }
+    public void setAdult(boolean adult) {
+        isAdult = adult;
+    }
+
     public Date getDate() {
         return date;
     }
@@ -24,16 +31,6 @@ public class Person {
     public void setDate(Date date) {
         this.date = date;
     }
-
-    public boolean isAdult() {
-        return isAdult;
-    }
-
-    public void setAdult(boolean adult) {
-        isAdult = adult;
-    }
-
-
 
     public Integer getId() {
         return id;

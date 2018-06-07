@@ -41,8 +41,8 @@ public class SqlMaker {
                 case ("class java.lang.Boolean"):
                     sqlbuild.append(key+" NUMERIC,");
                     break;
-                case ("java.util.Date"):
-                case ("java.sql.Date"):
+                case ("class java.util.Date"):
+                case ("class java.sql.Date"):
                     sqlbuild.append(key+" NUMERIC,");
                     break;
             }

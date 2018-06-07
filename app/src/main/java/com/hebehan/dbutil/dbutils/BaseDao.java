@@ -4,6 +4,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,11 +60,11 @@ public class BaseDao{
 
     public <T> T findById(Object entity,Class<T> clazz){
         checkTalbleExist(clazz);
-        Cursor cursor = write.query(Utils.getTableName(clazz),new String[]{Utils.getPrimaryKey(clazz)},SqlMaker.getWhereClause(Utils.getPrimaryKey(clazz)),SqlMaker.getWhereArgs(Utils.getInvokeValue(entity,Utils.getPrimaryKey(clazz))),null,null,null);
+//        Cursor cursor = write.query(Utils.getTableName(clazz),new String[]{Utils.getPrimaryKey(clazz)},SqlMaker.getWhereClause(Utils.getPrimaryKey(clazz)),SqlMaker.getWhereArgs(Utils.getInvokeValue(entity,Utils.getPrimaryKey(clazz))),null,null,null);
+        Cursor cursor = read.rawQuery("select * from "+Utils.getTableName(clazz)+" where "+ SqlMaker.getWhereClause(Utils.getPrimaryKey(clazz)),SqlMaker.getWhereArgs(Utils.getInvokeValue(entity,Utils.getPrimaryKey(entity.getClass()))));
         try {
-            if (cursor.moveToNext()) {
-                return Utils.getList(cursor,clazz).get(0);
-            }
+            List<T> lists = Utils.getList(cursor,clazz);
+            return lists.size()>0?lists.get(0):null;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -76,9 +77,7 @@ public class BaseDao{
         checkTalbleExist(clazz);
         Cursor cursor = read.rawQuery("select * from "+Utils.getTableName(clazz),null);
         try {
-            if (cursor.moveToNext()) {
-                return Utils.getList(cursor,clazz);
-            }
+            return Utils.getList(cursor,clazz);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
