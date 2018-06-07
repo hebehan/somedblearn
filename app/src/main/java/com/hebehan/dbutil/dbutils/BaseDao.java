@@ -74,7 +74,7 @@ public class BaseDao{
 
     public <T> List<T> findAll(Class<T> clazz){
         checkTalbleExist(clazz);
-        Cursor cursor = read.query(Utils.getTableName(clazz),null,null,null,null,null,null);
+        Cursor cursor = read.rawQuery("select * from "+Utils.getTableName(clazz),null);
         try {
             if (cursor.moveToNext()) {
                 return Utils.getList(cursor,clazz);
