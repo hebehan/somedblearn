@@ -18,33 +18,34 @@ public class SqlMaker {
         sqlbuild.append(" INTEGER PRIMARY KEY AUTOINCREMENT,");
         Map<String,String> attrNameMap = Utils.getTMapAttrNameAndType(clazz);
         for (String key:attrNameMap.keySet()){
+            if (key.endsWith(Utils.getPrimaryKey(clazz)))
+                continue;
             String type = attrNameMap.get(key);
             switch (type){
                 case ("class java.lang.String"):
-                    sqlbuild.append(key+" TEXT");
+                    sqlbuild.append(key+" TEXT,");
                     break;
                 case("int"):
                 case ("class java.lang.Integer"):
                 case("long"):
                 case ("class java.lang.Long"):
-                    sqlbuild.append(key+" INTEGER");
+                    sqlbuild.append(key+" INTEGER,");
                     break;
                 case ("float"):
                 case ("class java.lang.Float"):
                 case ("double"):
                 case ("class java.lang.Double"):
-                    sqlbuild.append(key+" REAL");
+                    sqlbuild.append(key+" REAL,");
                     break;
                 case ("boolean"):
                 case ("class java.lang.Boolean"):
-                    sqlbuild.append(key+" NUMERIC");
+                    sqlbuild.append(key+" NUMERIC,");
                     break;
                 case ("java.util.Date"):
                 case ("java.sql.Date"):
-                    sqlbuild.append(key+" NUMERIC");
+                    sqlbuild.append(key+" NUMERIC,");
                     break;
             }
-            sqlbuild.append(",");
         }
         sqlbuild.deleteCharAt(sqlbuild.length() - 1);
         sqlbuild.append(" )");

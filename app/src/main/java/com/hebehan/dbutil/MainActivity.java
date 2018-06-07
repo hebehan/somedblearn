@@ -3,6 +3,7 @@ package com.hebehan.dbutil;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,8 @@ import com.alibaba.fastjson.JSON;
 import com.hebehan.dbutil.bean.Person;
 import com.hebehan.dbutil.dbutils.BaseDao;
 import com.hebehan.dbutil.dbutils.LogUtil;
+
+import org.w3c.dom.ls.LSInput;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -31,9 +34,12 @@ public class MainActivity extends AppCompatActivity {
     Button delete;
     Button update;
     Button query;
+    Button all;
     RecyclerView recyclerView;
     DecimalFormat df = new DecimalFormat(".00");
     Map<Long,Long> idmap = new HashMap<>();
+    List<Person> list = new ArrayList<>();
+    DbAdapter adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,30 +48,55 @@ public class MainActivity extends AppCompatActivity {
         delete = findViewById(R.id.delete);
         update = findViewById(R.id.update);
         query= findViewById(R.id.query);
+        all= findViewById(R.id.all);
+        recyclerView = findViewById(R.id.personrecycleview);
+
+        adapter = new DbAdapter(list);
+        LinearLayoutManager manager = new LinearLayoutManager(this);
+        manager.setOrientation(LinearLayoutManager.VERTICAL);
+        recyclerView.setLayoutManager(manager);
+        recyclerView.setAdapter(adapter);
+
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 add();
+                findAll();
             }
         });
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 delete();
+                findAll();
             }
         });
 
         update.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                update();
+                findAll();
+            }
+        });
 
+        query.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                findOne();
+            }
+        });
+        all.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                findAll();
             }
         });
 
     }
 
     public void add(){
-        long result = BaseDao.getInstance().save(getRandomPerson(0));
+        long result = BaseDao.getInstance().save(getRandomPerson(1));
         idmap.put(result,result);
         LogUtil.d("test add",result>0?"add success id = "+result:"add fail");
     }
@@ -89,8 +120,21 @@ public class MainActivity extends AppCompatActivity {
         LogUtil.d("test delete",BaseDao.getInstance().update(getRandomPerson(key.intValue()))>0?"update id = "+key+"success":"add fail");
     }
 
-    public void findAll(){
+    public void findOne(){
+        Long key=0l;
+        for (Long tmp:idmap.keySet()){
+            key = tmp;
+            break;
+        }
+        list.clear();
+        list.add(BaseDao.getInstance().findById(new Person(key.intValue()),Person.class));
+        adapter.notifyDataSetChanged();
+    }
 
+    public void findAll(){
+        list.clear();
+        list.addAll(BaseDao.getInstance().findAll(Person.class));
+        adapter.notifyDataSetChanged();
     }
 
     public Person getRandomPerson(Integer id){
@@ -100,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
     public class DbAdapter extends RecyclerView.Adapter<PersonHolder>{
         List<Person> personList = new ArrayList<>();
 
-        public void DbAdapter(List<Person> personList){
+        public DbAdapter(List<Person> personList){
             this.personList = personList;
         }
 
@@ -115,10 +159,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull PersonHolder holder, int position) {
             Person person = personList.get(position);
-            holder.id.setText(person.getId());
+            holder.id.setText(person.getId()+"");
             holder.name.setText(person.getName());
             holder.height.setText(person.getHeight()+"");
-            holder.age.setText(person.getAge());
+            holder.age.setText(person.getAge()+"");
             holder.isAudlt.setText(person.isAdult()+"");
             holder.date.setText(person.getDate()+"");
 

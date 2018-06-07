@@ -74,7 +74,7 @@ public class BaseDao{
 
     public <T> List<T> findAll(Class<T> clazz){
         checkTalbleExist(clazz);
-        Cursor cursor = write.query(Utils.getTableName(clazz),null,null,null,null,null,null);
+        Cursor cursor = read.query(Utils.getTableName(clazz),null,null,null,null,null,null);
         try {
             if (cursor.moveToNext()) {
                 return Utils.getList(cursor,clazz);
@@ -132,7 +132,13 @@ public class BaseDao{
                 cursor = null;
             }
             //表不存在 创建表
-            write.execSQL(SqlMaker.getCreatTableSql(clazz));
+
+            try {
+                write.execSQL(SqlMaker.getCreatTableSql(clazz));
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
 
             return false;
         }else {

@@ -36,11 +36,19 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="查"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/all"
         app:layout_constraintLeft_toRightOf="@id/update" />
 
+    <Button
+        android:id="@+id/all"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="全部"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/query" />
+
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/personlistview"
+        android:id="@+id/personrecycleview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/add">
