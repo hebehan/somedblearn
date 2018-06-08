@@ -1,10 +1,12 @@
 package com.hebehan.dbutil;
 
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +16,7 @@ import android.widget.TextView;
 
 import com.alibaba.fastjson.JSON;
 import com.hebehan.dbutil.bean.Person;
+import com.hebehan.dbutil.bean.Student;
 import com.hebehan.dbutil.dbutils.BaseDao;
 import com.hebehan.dbutil.dbutils.LogUtil;
 
@@ -93,7 +96,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        all.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                startActivity(new Intent(MainActivity.this,TestActivity.class));
+                return true;
+            }
+        });
+
         findAll();
+
+//        Student student = new Student();
+//        student.setBanji("12");
+//        BaseDao.getInstance().save(student);
+
+//        Person person = getRandomPerson(0);
+//        long time = System.currentTimeMillis();
+//        for (int i = 0; i < 1000; i++) {
+//            BaseDao.getInstance().save(person);
+//        }
+//        LogUtil.d("performence","插入1000条数据耗时:"+(System.currentTimeMillis()-time)+"ms");
+//        time = System.currentTimeMillis();
+//        List<Person> personList = BaseDao.getInstance().findAll(Person.class);
+//        LogUtil.d("performence","查找1000条数据耗时:"+(System.currentTimeMillis()-time)+"ms");
+//        time = System.currentTimeMillis();
+//        for (Person p:personList){
+//            BaseDao.getInstance().delete(p);
+//        }
+//        LogUtil.d("performence","删除1000条数据耗时:"+(System.currentTimeMillis()-time)+"ms");
 
     }
 

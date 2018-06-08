@@ -35,6 +35,8 @@ public class Utils {
             String name = fields[j].getName();    //获取属性的名字
             if (name.equals(getPrimaryKey(bean.getClass())))
                 continue;
+            if (name.equalsIgnoreCase("serialversionuid"))
+                continue;
 //            if (("serialversionuid creator $change").contains(name.toLowerCase()))
 //                continue;
             String type = fields[j].getGenericType().toString();    //获取属性的类型
@@ -85,6 +87,8 @@ public class Utils {
         for(int i=0 ; i<fields.length ; i++) {//遍历所有属性
             fields[i].setAccessible(true);
             String name = fields[i].getName();    //获取属性的名字
+            if (name.equalsIgnoreCase("serialversionuid"))
+                continue;
 //            if (("serialversionuid creator $change").contains(name.toLowerCase()))
 //                continue;
             String type = fields[i].getGenericType().toString();    //获取属性的类型
